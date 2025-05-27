@@ -1,0 +1,4 @@
+uvloop
+cryptogrpaphy
+pycryptodome
+pycrypto
