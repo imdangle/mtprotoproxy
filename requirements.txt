@@ -1,4 +1,4 @@
 uvloop
-cryptogrpaphy
+cryptography
 pycryptodome
-pycrypto
+pycryptodome
