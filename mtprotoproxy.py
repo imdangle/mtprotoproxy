@@ -137,6 +137,9 @@ def init_config():
 
     # load advanced settings
 
+    # use connection pool to Telegram servers
+    conf_dict.setdefault("USE_CONNECTION_POOL", False) 
+
     # use middle proxy, necessary to show ad
     conf_dict.setdefault("USE_MIDDLE_PROXY", len(conf_dict["AD_TAG"]) == 16)
 
@@ -510,28 +513,27 @@ class TgConnectionPool:
             self.pools[(host, port, init_func)].append(connect_task)
 
     async def get_connection(self, host, port, init_func=None):
-        # tmp disable conn pool for less user
-        # self.register_host_port(host, port, init_func)
-
-        # ret = None
-        # for task in self.pools[(host, port, init_func)][::]:
-        #     if task.done():
-        #         if task.exception():
-        #             self.pools[(host, port, init_func)].remove(task)
-        #             continue
-
-        #         reader, writer, *other = task.result()
-        #         if writer.transport.is_closing():
-        #             self.pools[(host, port, init_func)].remove(task)
-        #             continue
-
-        #         if not ret:
-        #             self.pools[(host, port, init_func)].remove(task)
-        #             ret = (reader, writer, *other)
-
-        # self.register_host_port(host, port, init_func)
-        # if ret:
-        #     return ret
+        # Use pool if enabled in config, otherwise always open new connection
+        if getattr(config, "USE_CONNECTION_POOL", False):
+            self.register_host_port(host, port, init_func)
+            ret = None
+            pool = self.pools.get((host, port, init_func), [])
+            for task in pool[:]:
+                if task.done():
+                    if task.exception():
+                        pool.remove(task)
+                        continue
+                    reader, writer, *other = task.result()
+                    if writer.transport.is_closing():
+                        pool.remove(task)
+                        continue
+                    if not ret:
+                        pool.remove(task)
+                        ret = (reader, writer, *other)
+            self.register_host_port(host, port, init_func)
+            if ret:
+                return ret
+        # Default: open new connection
         return await self.open_tg_connection(host, port, init_func)
 
 

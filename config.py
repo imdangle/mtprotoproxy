@@ -1,6 +1,11 @@
 PORT = 443
 METRICS_PORT = 9157
 
+# USE_CONNECTION_POOL controls whether the proxy uses a connection pool to Telegram servers.
+# Set to True to enable connection pooling (recommended for high concurrent users, e.g. >200).
+# Set to False to always open a new connection for each client (recommended for low concurrent users).
+USE_CONNECTION_POOL = False
+
 # name -> secret (32 hex chars)
 USERS = {
     "tg":  "00000000000000000000000000000001",
